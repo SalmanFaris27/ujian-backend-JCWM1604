@@ -1,18 +1,37 @@
-const express = require('express')
-const cors = require('cors')
-const bodyparser = require('body-parser')
-
-// main app
+const express = require("express")
 const app = express()
+const cors = require("cors")
+require('dotenv').config()
+const morgan = require ('morgan')
+const bearerToken = require("express-bearer-token");
+app.use(bearerToken());
+const PORT = 2000
+morgan.token("date",function (req,res){
+    return new Date()
+})
 
-// apply middleware
-app.use(cors())
-app.use(bodyparser.json())
 
-// main route
-const response = (req, res) => res.status(200).send('<h1>REST API JCWM1604</h1>')
-app.get('/', response)
+app.use(cors({exposedHeaders:["Content-Length", "x-token-access","x-token-refresh"]}))
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms:date'))
+app.use(express.json())
+app.use(express.urlencoded({extended:false}))
+app.use(express.static("public"))
 
-// bind to local machine
-const PORT = process.env.PORT || 2000
-app.listen(PORT, () => `CONNECTED : port ${PORT}`)
+
+
+app.get("/",(req,res)=>{
+    res.send("<h1>welcome to API 1.O</h1>")
+})
+
+const {AuthRoutes} = require("./src/routes")
+app.use("/user", AuthRoutes)
+
+// const {moviesRoutes} = require("./src/routes")
+// app.use("/movies", moviesRoutes)
+
+app.all("*",(req,res)=>{
+    res.status(404).send("server error")
+})
+
+
+app.listen(PORT, ()=> console.log("listen in port"+PORT))
